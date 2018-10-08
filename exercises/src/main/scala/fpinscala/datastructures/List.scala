@@ -50,19 +50,46 @@ object List { // `List` companion object. Contains functions for creating and wo
     foldRight(ns, 1.0)(_ * _) // `_ * _` is more concise notation for `(x,y) => x * y`; see sidebar
 
 
-  def tail[A](l: List[A]): List[A] = ???
+  def tail[A](l: List[A]): List[A] = l match {
+    case Cons(x, xs) => xs
+    case Nil => Nil
+  }
 
-  def setHead[A](l: List[A], h: A): List[A] = ???
+  def setHead[A](l: List[A], h: A): List[A] = l match {
+    case Cons(_, xs) => Cons(h, xs)
+    case Nil => Cons(h, Nil)
 
-  def drop[A](l: List[A], n: Int): List[A] = ???
+  }
 
-  def dropWhile[A](l: List[A], f: A => Boolean): List[A] = ???
+  def drop[A](l: List[A], n: Int): List[A] = {
+    if(n == 0) l
+    else drop(tail(l), n - 1)
+  }
 
-  def init[A](l: List[A]): List[A] = ???
+  def dropWhile[A](l: List[A], f: A => Boolean): List[A] = l match {
+    case Cons(x, xs) if(f(x)) => dropWhile(xs, f)
+    case _ => l
+  }
 
-  def length[A](l: List[A]): Int = ???
+  def init[A](l: List[A]): List[A] = {
+    def tillLast(xs: List[A], result: List[A]): List[A] = xs match {
+      case Nil => result
+      case Cons(_, Nil) => result
+      case Cons(t, ts) => tillLast(ts, append(result, List(t)))
+    }
+    tillLast(l, Nil)
+  }
 
-  def foldLeft[A,B](l: List[A], z: B)(f: (B, A) => B): B = ???
+  def length[A](l: List[A]): Int = foldRight(l, 0)((_, acc) => acc + 1)
 
-  def map[A,B](l: List[A])(f: A => B): List[B] = ???
+  def foldLeft[A,B](l: List[A], z: B)(f: (B, A) => B): B = l match {
+    case Nil => z
+    case Cons(t, ts) => foldLeft(ts, f(z, t))(f)
+  }
+
+  def map[A,B](l: List[A])(f: A => B): List[B] = foldLeft(l, List[B]())((acc, a) => append(acc, List(f(a))))
+
+  def main(args: Array[String]): Unit = {
+    println(map(List(1,2,3, 4))(_ + 10))
+  }
 }
