@@ -38,17 +38,25 @@ trait Stream[+A] {
     go(this, n)
   }
 
-  def takeWhile(p: A => Boolean): Stream[A] = ???
+  def takeWhile(p: A => Boolean): Stream[A] = foldRight(empty[A])((h, t) => if (p(h)) cons(h, t) else t)
 
-  def forAll(p: A => Boolean): Boolean = ???
+  def forAll(p: A => Boolean): Boolean = foldRight(true)((a, b) => p(a) && b)
 
-  def headOption: Option[A] = this match {
-    case Cons(h, _) => Some(h())
-    case _ => None
-  }
+//  def headOption: Option[A] = this match {
+//    case Cons(h, _) => Some(h())
+//    case _ => None
+//  }
+  def headOption: Option[A] = foldRight(None[A])((a, _) => Some(a))
 
   // 5.7 map, filter, append, flatmap using foldRight. Part of the exercise is
   // writing your own function signatures.
+  def map[B](f: A => B): Stream[B] = foldRight(empty[B])((a, b) => cons(f(a), b))
+
+  def filter(f: A => Boolean): Stream[A] = foldRight(empty[A])((a, b) => if(f(a)) cons(a,b) else b)
+
+  def append[B>:A](s: Stream[B]): Stream[B] = foldRight(s)((a, b) => cons(a, b))
+
+  def flatMap[B](f: A => Stream[B]): Stream[B] = foldRight(empty[B])((a,b) => f(a) append b)
 
   def startsWith[B](s: Stream[B]): Boolean = ???
 
@@ -61,6 +69,23 @@ trait Stream[+A] {
 
     go(this, List())
   }
+
+  def constant[A](a: A): Stream[A] = {
+    lazy val tail: Stream[A] = Cons(() => a, () => tail)
+    tail
+  }
+
+  def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = f(z) match {
+    case Some((a, s)) => cons(a, unfold(s)(f))
+    case None => empty[A]
+  }
+
+  def fib: Stream[Long] = {
+    def go(first: Long, next: Long): Stream[Long] = cons(first, go(next, first+next))
+    go(0,1)
+  }
+
+  def from(n: Int): Stream[Int] = cons(n, from(n + 1))
 }
 case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
